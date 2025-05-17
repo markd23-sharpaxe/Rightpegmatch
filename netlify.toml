@@ -1,0 +1,18 @@
+# Netlify configuration file
+
+# Build configuration - no build needed
+[build]
+  # This line is important - it tells Netlify where to find the content to deploy
+  publish = "/"
+  # No build command needed
+  command = ""
+
+# Redirects for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables
+[build.environment]
+  VITE_API_URL = "https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/api"
