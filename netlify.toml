@@ -1,0 +1,23 @@
+# Netlify configuration file for Right Peg Match
+
+# Build settings
+[build]
+  # Base directory (where package.json is located)
+  base = "client"
+  
+  # Build command
+  command = "npm run build"
+  
+  # Directory to publish (output of the build)
+  publish = "dist"
+
+# Environment variables 
+[build.environment]
+  # This API URL should point to your Replit backend
+  VITE_API_URL = "https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/api"
+
+# Redirects for client-side routing (SPA)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
