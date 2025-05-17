@@ -279,39 +279,67 @@
     </div>
   </footer>
 
-  <!-- Scripts -->
-  <script type="module">
-    import { onConnectionStatusChange } from './api-client.js';
+  <!-- Connection Script - Simplified, no module imports -->
+  <script>
+    // API configuration
+    const API_URL = 'https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/api';
     
-    // Handle API connection status
+    // Connection status elements
     const connectionStatus = document.getElementById('connection-status');
     const statusIndicator = document.getElementById('status-indicator');
     const statusText = document.getElementById('status-text');
     
-    if (connectionStatus && statusIndicator && statusText) {
-      connectionStatus.classList.remove('hidden');
-      
-      onConnectionStatusChange((isConnected) => {
-        statusIndicator.classList.remove('status-checking', 'status-connected', 'status-disconnected');
+    // Simple ping function to check connection
+    async function checkConnection() {
+      try {
+        const response = await fetch(`${API_URL}/ping`, {
+          method: 'GET',
+          mode: 'cors',
+          cache: 'no-cache'
+        });
         
-        if (isConnected === null) {
-          statusIndicator.classList.add('status-checking');
-          statusText.textContent = 'Checking connection...';
-        } else if (isConnected) {
-          statusIndicator.classList.add('status-connected');
-          statusText.textContent = 'Connected to API';
-          
-          // Hide after 5 seconds of successful connection
-          setTimeout(() => {
-            connectionStatus.classList.add('hidden');
-          }, 5000);
-        } else {
-          statusIndicator.classList.add('status-disconnected');
-          statusText.textContent = 'API Disconnected';
-          connectionStatus.classList.remove('hidden');
-        }
-      });
+        updateConnectionStatus(response.ok);
+        return response.ok;
+      } catch (error) {
+        console.error('Connection error:', error);
+        updateConnectionStatus(false);
+        return false;
+      }
     }
+    
+    // Update the connection status UI
+    function updateConnectionStatus(isConnected) {
+      if (!connectionStatus || !statusIndicator || !statusText) return;
+      
+      connectionStatus.classList.remove('hidden');
+      statusIndicator.classList.remove('status-checking', 'status-connected', 'status-disconnected');
+      
+      if (isConnected === null) {
+        statusIndicator.classList.add('status-checking');
+        statusText.textContent = 'Checking connection...';
+      } else if (isConnected) {
+        statusIndicator.classList.add('status-connected');
+        statusText.textContent = 'Connected to API';
+        
+        // Hide after 5 seconds of successful connection
+        setTimeout(() => {
+          connectionStatus.classList.add('hidden');
+        }, 5000);
+      } else {
+        statusIndicator.classList.add('status-disconnected');
+        statusText.textContent = 'API Disconnected';
+        connectionStatus.classList.remove('hidden');
+      }
+    }
+    
+    // Check connection on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      updateConnectionStatus(null); // Show checking status
+      checkConnection();
+      
+      // Check connection every 30 seconds
+      setInterval(checkConnection, 30000);
+    });
   </script>
 </body>
 </html>
