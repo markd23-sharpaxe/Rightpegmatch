@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Connection Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #4F46E5;
+        }
+        button {
+            background-color: #4F46E5;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background-color: #4338CA;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .error {
+            color: #B91C1C;
+        }
+        .success {
+            color: #047857;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            border: 1px solid #e5e7eb;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .api-url-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-family: monospace;
+        }
+        .override-notice {
+            background-color: #FFFBEB;
+            border: 1px solid #FEF3C7;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>API Connection Test</h1>
+    <p>This page tests the connection between the Netlify frontend and the Replit backend API.</p>
+    
+    <div class="test-section">
+        <h2>1. API Configuration</h2>
+        <p>Current API URL: <code id="api-url">Loading...</code></p>
+        
+        <div class="override-notice">
+            <p><strong>Override API URL for testing:</strong></p>
+            <input type="text" id="custom-api-url" class="api-url-input" 
+                   placeholder="e.g. https://remote-match-maker-markdurno-markdurno.replit.app/api">
+            <button id="update-api-url">Update API URL</button>
+        </div>
+        
+        <p><strong>Status:</strong> <span id="config-status">Checking...</span></p>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Automatic API Diagnostics</h2>
+        <p>Run a complete diagnostic test on the API connection.</p>
+        <button id="run-diagnostics">Run Full Diagnostics</button>
+        <div id="diagnostics-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. CORS Test</h2>
+        <p>Testing if the API allows cross-origin requests from this domain.</p>
+        <button id="test-cors">Test CORS</button>
+        <p><strong>Status:</strong> <span id="cors-status">Not tested</span></p>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Jobs API Test</h2>
+        <p>Testing GET request to /api/jobs endpoint.</p>
+        <button id="test-jobs">Test Jobs API</button>
+        <p><strong>Status:</strong> <span id="jobs-status">Not tested</span></p>
+        <pre id="jobs-result" style="display: none;"></pre>
+    </div>
+
+    <div class="test-section">
+        <h2>5. User API Test</h2>
+        <p>Testing if authentication API endpoints are accessible.</p>
+        <button id="test-user">Test User API</button>
+        <p><strong>Status:</strong> <span id="user-status">Not tested</span></p>
+        <pre id="user-result" style="display: none;"></pre>
+    </div>
+
+    <script type="module">
+        import { testApiConnectivity, renderDiagnosticResults } from './api-diagnostics.js';
+        
+        // Get API URL from various sources
+        let storedApiUrl = localStorage.getItem('custom_api_url');
+        let API_URL = new URLSearchParams(window.location.search).get('api') || 
+                      storedApiUrl || 
+                      (window.ENV_VITE_API_URL || 'https://remote-match-maker-markdurno-markdurno.replit.app/api');
+        
+        // Display the API URL
+        document.getElementById('api-url').textContent = API_URL;
+        document.getElementById('config-status').textContent = 'Configured';
+        document.getElementById('config-status').className = 'success';
+        
+        // Set up custom API URL input
+        const customApiUrlInput = document.getElementById('custom-api-url');
+        customApiUrlInput.value = storedApiUrl || '';
+        
+        // Update API URL button
+        document.getElementById('update-api-url').addEventListener('click', () => {
+            const customUrl = customApiUrlInput.value.trim();
+            if (customUrl) {
+                API_URL = customUrl;
+                localStorage.setItem('custom_api_url', customUrl);
+                document.getElementById('api-url').textContent = API_URL;
+                alert('API URL updated! Run the tests again to use the new URL.');
+                location.reload();
+            } else {
+                alert('Please enter a valid API URL.');
+            }
+        });
+        
+        // Log for debugging
+        console.log('API Test using URL:', API_URL);
+        
+        // Run Diagnostics button
+        document.getElementById('run-diagnostics').addEventListener('click', async () => {
+            const diagButton = document.getElementById('run-diagnostics');
+            const resultDiv = document.getElementById('diagnostics-result');
+            
+            diagButton.disabled = true;
+            diagButton.textContent = 'Running Diagnostics...';
+            
+            try {
+                const results = await testApiConnectivity(API_URL);
+                renderDiagnosticResults(results, resultDiv);
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <p>Error running diagnostics: ${error.message}</p>
+                        <pre>${error.stack}</pre>
+                    </div>
+                `;
+            } finally {
+                diagButton.disabled = false;
+                diagButton.textContent = 'Run Full Diagnostics';
+            }
+        });
+
+        // CORS Test
+        document.getElementById('test-cors').addEventListener('click', async () => {
+            const statusEl = document.getElementById('cors-status');
+            statusEl.textContent = 'Testing...';
+            
+            try {
+                console.log('Testing CORS with API URL:', API_URL);
+                
+                const response = await fetch(`${API_URL}/jobs`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('CORS test response status:', response.status);
+                
+                if (response.ok) {
+                    statusEl.textContent = 'Success! CORS is properly configured.';
+                    statusEl.className = 'success';
+                } else {
+                    statusEl.textContent = `Failed! Status: ${response.status} ${response.statusText}`;
+                    statusEl.className = 'error';
+                }
+            } catch (error) {
+                console.error('CORS test detailed error:', error);
+                statusEl.textContent = `Error! ${error.message}`;
+                statusEl.className = 'error';
+            }
+        });
+
+        // Jobs API Test
+        document.getElementById('test-jobs').addEventListener('click', async () => {
+            const statusEl = document.getElementById('jobs-status');
+            const resultEl = document.getElementById('jobs-result');
+            statusEl.textContent = 'Testing...';
+            resultEl.style.display = 'none';
+            
+            try {
+                console.log('Testing Jobs API with URL:', `${API_URL}/jobs`);
+                
+                const response = await fetch(`${API_URL}/jobs`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('Jobs API response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('Jobs API received data count:', result ? result.length : 0);
+                    
+                    statusEl.textContent = 'Success! Received jobs data.';
+                    statusEl.className = 'success';
+                    resultEl.textContent = result && result.length > 0 
+                        ? JSON.stringify(result.slice(0, 2), null, 2) + '\n// ... more jobs truncated'
+                        : 'Received empty jobs array []';
+                    resultEl.style.display = 'block';
+                } else {
+                    let errorText = `Failed! Status: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorResult = await response.json();
+                        resultEl.textContent = JSON.stringify(errorResult, null, 2);
+                    } catch (e) {
+                        resultEl.textContent = await response.text() || 'No error details available';
+                    }
+                    statusEl.textContent = errorText;
+                    statusEl.className = 'error';
+                    resultEl.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Jobs API test detailed error:', error);
+                statusEl.textContent = `Error! ${error.message}`;
+                statusEl.className = 'error';
+                resultEl.textContent = 'Check browser console for more details';
+                resultEl.style.display = 'block';
+            }
+        });
+
+        // User API Test
+        document.getElementById('test-user').addEventListener('click', async () => {
+            const statusEl = document.getElementById('user-status');
+            const resultEl = document.getElementById('user-result');
+            statusEl.textContent = 'Testing...';
+            resultEl.style.display = 'none';
+            
+            try {
+                console.log('Testing User API with URL:', `${API_URL}/user`);
+                
+                const response = await fetch(`${API_URL}/user`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('User API response status:', response.status);
+                
+                if (response.status === 401) {
+                    // 401 is actually expected if not logged in
+                    statusEl.textContent = 'Success! Auth endpoint working (returned 401 as expected when not logged in).';
+                    statusEl.className = 'success';
+                    resultEl.textContent = 'Authentication endpoint correctly returned 401 Unauthorized status.\nThis is the expected behavior when not logged in.';
+                    resultEl.style.display = 'block';
+                } else if (response.ok) {
+                    const result = await response.json();
+                    console.log('User API received data:', result);
+                    
+                    statusEl.textContent = 'Success! Authenticated user found.';
+                    statusEl.className = 'success';
+                    resultEl.textContent = JSON.stringify(result, null, 2);
+                    resultEl.style.display = 'block';
+                } else {
+                    let errorText = `Unexpected status: ${response.status} ${response.statusText}`;
+                    try {
+                        const errorResult = await response.json();
+                        resultEl.textContent = JSON.stringify(errorResult, null, 2);
+                    } catch (e) {
+                        resultEl.textContent = await response.text() || 'No error details available';
+                    }
+                    statusEl.textContent = errorText;
+                    statusEl.className = 'error';
+                    resultEl.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('User API test detailed error:', error);
+                statusEl.textContent = `Error! ${error.message}`;
+                statusEl.className = 'error';
+                resultEl.textContent = 'Check browser console for more details';
+                resultEl.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
