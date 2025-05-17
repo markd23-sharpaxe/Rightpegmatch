@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Standalone API Connection Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            color: #333;
+        }
+        h1, h2 {
+            color: #4F46E5;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .button {
+            background-color: #4F46E5;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px 5px 5px 0;
+            transition: background-color 0.2s;
+            display: inline-block;
+        }
+        .button:hover {
+            background-color: #4338CA;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .flex {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success {
+            background-color: #10B981;
+        }
+        .status-error {
+            background-color: #EF4444;
+        }
+        .status-neutral {
+            background-color: #6B7280;
+        }
+        .status-warning {
+            background-color: #F59E0B;
+        }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 9999px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .badge-success {
+            background-color: #D1FAE5;
+            color: #065F46;
+        }
+        .badge-error {
+            background-color: #FEE2E2;
+            color: #B91C1C;
+        }
+        .badge-warning {
+            background-color: #FEF3C7;
+            color: #92400E;
+        }
+        .badge-neutral {
+            background-color: #F3F4F6;
+            color: #374151;
+        }
+        .log-container {
+            margin-top: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .hidden {
+            display: none;
+        }
+        .endpoints-container {
+            margin-top: 20px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .log-time {
+            color: #6B7280;
+            font-size: 12px;
+        }
+        .log-info {
+            color: #3B82F6;
+        }
+        .log-success {
+            color: #10B981;
+        }
+        .log-error {
+            color: #EF4444;
+        }
+        .endpoints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .endpoint-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            background-color: #fff;
+        }
+        .endpoint-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .endpoint-status {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Standalone API Connection Test</h1>
+    <p>This tool helps diagnose connection issues between Netlify and your Replit backend API.</p>
+    
+    <div class="container">
+        <h2>1. API Configuration</h2>
+        <label for="api-url">API Base URL:</label>
+        <input 
+            type="text" 
+            id="api-url" 
+            placeholder="e.g., https://remote-match-maker-markdurno-markdurno.replit.app/api"
+            value="https://remote-match-maker-markdurno-markdurno.replit.app/api"
+        >
+        
+        <div class="flex">
+            <button id="check-connection" class="button">Check Connection</button>
+            <button id="clear-logs" class="button" style="background-color: #6B7280;">Clear Logs</button>
+        </div>
+        
+        <div id="connection-status" class="hidden">
+            <div class="status-badge badge-neutral">
+                <span class="status-indicator status-neutral"></span>
+                <span>Not tested yet</span>
+            </div>
+        </div>
+        
+        <div id="logs" class="log-container hidden">
+            <div class="log-entry">
+                <span class="log-time">[12:00:00]</span>
+                <span class="log-info">Test started...</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>2. Endpoint Tests</h2>
+        <p>Test specific API endpoints to see if they're responding correctly.</p>
+        
+        <div class="flex">
+            <button id="test-jobs" class="button">Test /jobs</button>
+            <button id="test-users" class="button">Test /user</button>
+            <button id="test-all" class="button">Test All Endpoints</button>
+        </div>
+        
+        <div class="endpoints-grid" id="endpoints-grid">
+            <!-- Endpoint cards will be added here dynamically -->
+        </div>
+        
+        <pre id="endpoint-result" class="hidden">No results yet</pre>
+    </div>
+    
+    <div class="container">
+        <h2>3. CORS Diagnostics</h2>
+        <p>Tests if Cross-Origin Resource Sharing (CORS) is properly configured.</p>
+        
+        <button id="test-cors" class="button">Test CORS Configuration</button>
+        <div id="cors-result" class="hidden">
+            <div class="status-badge badge-neutral">
+                <span class="status-indicator status-neutral"></span>
+                <span>Not tested yet</span>
+            </div>
+            <pre id="cors-details" class="hidden"></pre>
+        </div>
+    </div>
+    
+    <div class="container">
+        <h2>4. Troubleshooting</h2>
+        <div id="troubleshooting">
+            <p>If you're having issues connecting to your API:</p>
+            <ul>
+                <li>Make sure your Replit backend is running</li>
+                <li>Check that the API URL is correct</li>
+                <li>Verify that CORS is properly configured on the backend</li>
+                <li>Check for any network issues or blocking firewalls</li>
+                <li>Ensure environment variables are properly set in Netlify</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // DOM Elements
+        const apiUrlInput = document.getElementById('api-url');
+        const checkConnectionBtn = document.getElementById('check-connection');
+        const clearLogsBtn = document.getElementById('clear-logs');
+        const connectionStatusDiv = document.getElementById('connection-status');
+        const logsDiv = document.getElementById('logs');
+        const testJobsBtn = document.getElementById('test-jobs');
+        const testUsersBtn = document.getElementById('test-users');
+        const testAllBtn = document.getElementById('test-all');
+        const endpointsGrid = document.getElementById('endpoints-grid');
+        const endpointResultPre = document.getElementById('endpoint-result');
+        const testCorsBtn = document.getElementById('test-cors');
+        const corsResultDiv = document.getElementById('cors-result');
+        const corsDetailsPre = document.getElementById('cors-details');
+        
+        // Global state
+        const endpoints = [
+            { path: '/jobs', name: 'Jobs API', tested: false },
+            { path: '/user', name: 'User API', tested: false },
+            { path: '/skills', name: 'Skills API', tested: false },
+            { path: '/job-roles', name: 'Job Roles API', tested: false }
+        ];
+        
+        let isConnected = null;
+        
+        // Initialize
+        function init() {
+            // Check URL parameters for API URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const apiUrlParam = urlParams.get('api_url');
+            if (apiUrlParam) {
+                apiUrlInput.value = apiUrlParam;
+            }
+            
+            // Initialize Endpoints Grid
+            renderEndpointsGrid();
+            
+            // Show logs container initially empty
+            logsDiv.classList.remove('hidden');
+            logsDiv.innerHTML = '';
+            
+            // Show connection status
+            connectionStatusDiv.classList.remove('hidden');
+            updateConnectionStatus('neutral', 'Not tested yet');
+            
+            // Event listeners
+            checkConnectionBtn.addEventListener('click', testConnection);
+            clearLogsBtn.addEventListener('click', clearLogs);
+            testJobsBtn.addEventListener('click', () => testEndpoint('/jobs'));
+            testUsersBtn.addEventListener('click', () => testEndpoint('/user'));
+            testAllBtn.addEventListener('click', testAllEndpoints);
+            testCorsBtn.addEventListener('click', testCORS);
+        }
+        
+        // Logging
+        function addLog(message, type = 'info') {
+            const now = new Date();
+            const time = now.toLocaleTimeString();
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `
+                <span class="log-time">[${time}]</span>
+                <span class="log-${type}">${message}</span>
+            `;
+            
+            logsDiv.appendChild(logEntry);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        function clearLogs() {
+            logsDiv.innerHTML = '';
+            addLog('Logs cleared');
+        }
+        
+        // Connection Status
+        function updateConnectionStatus(status, message) {
+            connectionStatusDiv.innerHTML = '';
+            
+            const statusBadge = document.createElement('div');
+            statusBadge.className = `status-badge badge-${status}`;
+            
+            const statusIndicator = document.createElement('span');
+            statusIndicator.className = `status-indicator status-${status}`;
+            
+            const statusText = document.createElement('span');
+            statusText.textContent = message;
+            
+            statusBadge.appendChild(statusIndicator);
+            statusBadge.appendChild(statusText);
+            connectionStatusDiv.appendChild(statusBadge);
+        }
+        
+        // Test Connection
+        async function testConnection() {
+            const apiUrl = apiUrlInput.value.trim();
+            if (!apiUrl) {
+                addLog('Please enter an API URL', 'error');
+                updateConnectionStatus('error', 'No API URL provided');
+                return;
+            }
+            
+            updateConnectionStatus('warning', 'Testing connection...');
+            addLog(`Testing connection to ${apiUrl}`, 'info');
+            
+            try {
+                const testEndpoint = '/jobs';
+                addLog(`Sending request to ${apiUrl}${testEndpoint}`, 'info');
+                
+                const startTime = Date.now();
+                const response = await fetch(`${apiUrl}${testEndpoint}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                const duration = Date.now() - startTime;
+                
+                if (response.ok) {
+                    isConnected = true;
+                    updateConnectionStatus('success', `Connected (${duration}ms)`);
+                    addLog(`Connection successful in ${duration}ms`, 'success');
+                    
+                    // Parse response
+                    try {
+                        const data = await response.json();
+                        addLog(`Received ${data.length} items from API`, 'success');
+                    } catch (e) {
+                        addLog(`Response is not valid JSON: ${e.message}`, 'error');
+                    }
+                } else {
+                    isConnected = false;
+                    updateConnectionStatus('error', `Error: ${response.status} ${response.statusText}`);
+                    addLog(`Server returned error: ${response.status} ${response.statusText}`, 'error');
+                    
+                    try {
+                        const errorText = await response.text();
+                        addLog(`Response: ${errorText}`, 'error');
+                    } catch (e) {
+                        addLog(`Could not read error response: ${e.message}`, 'error');
+                    }
+                }
+            } catch (error) {
+                isConnected = false;
+                updateConnectionStatus('error', `Error: ${error.message}`);
+                addLog(`Connection failed: ${error.message}`, 'error');
+                
+                // Add specific troubleshooting advice
+                if (error.message.includes('Failed to fetch')) {
+                    addLog('This could indicate a network error, CORS issue, or the API server is down', 'info');
+                } else if (error.message.includes('NetworkError')) {
+                    addLog('This is likely a CORS error. Check that the API server allows requests from this origin', 'info');
+                }
+            }
+        }
+        
+        // Endpoints Grid
+        function renderEndpointsGrid() {
+            endpointsGrid.innerHTML = '';
+            
+            endpoints.forEach((endpoint, index) => {
+                const card = document.createElement('div');
+                card.className = 'endpoint-card';
+                card.id = `endpoint-${index}`;
+                
+                const name = document.createElement('div');
+                name.className = 'endpoint-name';
+                name.textContent = endpoint.name;
+                
+                const path = document.createElement('div');
+                path.className = 'endpoint-path';
+                path.textContent = endpoint.path;
+                
+                const status = document.createElement('div');
+                status.className = 'endpoint-status';
+                status.innerHTML = endpoint.tested 
+                    ? (endpoint.success 
+                        ? '<span class="status-indicator status-success"></span> Success' 
+                        : '<span class="status-indicator status-error"></span> Failed')
+                    : '<span class="status-indicator status-neutral"></span> Not tested';
+                
+                card.appendChild(name);
+                card.appendChild(path);
+                card.appendChild(status);
+                endpointsGrid.appendChild(card);
+                
+                // Add click event to test this endpoint
+                card.addEventListener('click', () => testEndpoint(endpoint.path));
+            });
+        }
+        
+        // Test Endpoint
+        async function testEndpoint(path) {
+            const apiUrl = apiUrlInput.value.trim();
+            if (!apiUrl) {
+                addLog('Please enter an API URL', 'error');
+                return;
+            }
+            
+            addLog(`Testing endpoint: ${path}`, 'info');
+            endpointResultPre.classList.remove('hidden');
+            endpointResultPre.textContent = 'Testing...';
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${apiUrl}${path}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                const duration = Date.now() - startTime;
+                
+                // Update endpoint status in grid
+                const endpointIndex = endpoints.findIndex(e => e.path === path);
+                if (endpointIndex >= 0) {
+                    endpoints[endpointIndex].tested = true;
+                    endpoints[endpointIndex].success = response.ok;
+                    endpoints[endpointIndex].status = response.status;
+                    endpoints[endpointIndex].duration = duration;
+                    renderEndpointsGrid();
+                }
+                
+                if (response.ok) {
+                    addLog(`Endpoint ${path} returned ${response.status} in ${duration}ms`, 'success');
+                    
+                    try {
+                        const data = await response.json();
+                        endpointResultPre.textContent = JSON.stringify(data, null, 2).substring(0, 1000);
+                        if (JSON.stringify(data).length > 1000) {
+                            endpointResultPre.textContent += '\n\n[Response truncated for readability]';
+                        }
+                    } catch (e) {
+                        endpointResultPre.textContent = await response.text();
+                        addLog(`Response is not valid JSON: ${e.message}`, 'error');
+                    }
+                } else {
+                    addLog(`Endpoint ${path} failed with status ${response.status} in ${duration}ms`, 'error');
+                    
+                    try {
+                        endpointResultPre.textContent = await response.text();
+                    } catch (e) {
+                        endpointResultPre.textContent = `Could not read response: ${e.message}`;
+                    }
+                }
+            } catch (error) {
+                // Update endpoint status in grid
+                const endpointIndex = endpoints.findIndex(e => e.path === path);
+                if (endpointIndex >= 0) {
+                    endpoints[endpointIndex].tested = true;
+                    endpoints[endpointIndex].success = false;
+                    endpoints[endpointIndex].error = error.message;
+                    renderEndpointsGrid();
+                }
+                
+                addLog(`Endpoint ${path} test failed: ${error.message}`, 'error');
+                endpointResultPre.textContent = `Error: ${error.message}\n\n${error.stack || ''}`;
+            }
+        }
+        
+        // Test All Endpoints
+        async function testAllEndpoints() {
+            const apiUrl = apiUrlInput.value.trim();
+            if (!apiUrl) {
+                addLog('Please enter an API URL', 'error');
+                return;
+            }
+            
+            addLog('Testing all endpoints', 'info');
+            endpointResultPre.classList.remove('hidden');
+            endpointResultPre.textContent = 'Testing all endpoints...';
+            
+            let successes = 0;
+            let failures = 0;
+            
+            for (const endpoint of endpoints) {
+                addLog(`Testing ${endpoint.name} (${endpoint.path})`, 'info');
+                
+                try {
+                    const startTime = Date.now();
+                    const response = await fetch(`${apiUrl}${endpoint.path}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const duration = Date.now() - startTime;
+                    
+                    endpoint.tested = true;
+                    endpoint.success = response.ok;
+                    endpoint.status = response.status;
+                    endpoint.duration = duration;
+                    
+                    if (response.ok) {
+                        successes++;
+                        addLog(`✓ ${endpoint.name}: Success (${duration}ms)`, 'success');
+                    } else {
+                        failures++;
+                        addLog(`✗ ${endpoint.name}: Failed - ${response.status} ${response.statusText} (${duration}ms)`, 'error');
+                    }
+                } catch (error) {
+                    endpoint.tested = true;
+                    endpoint.success = false;
+                    endpoint.error = error.message;
+                    failures++;
+                    addLog(`✗ ${endpoint.name}: Error - ${error.message}`, 'error');
+                }
+            }
+            
+            renderEndpointsGrid();
+            endpointResultPre.textContent = `Test completed.\nSuccessful: ${successes}\nFailed: ${failures}`;
+            
+            addLog(`All endpoint tests completed. Successful: ${successes}, Failed: ${failures}`, 'info');
+        }
+        
+        // Test CORS
+        async function testCORS() {
+            const apiUrl = apiUrlInput.value.trim();
+            if (!apiUrl) {
+                addLog('Please enter an API URL', 'error');
+                return;
+            }
+            
+            addLog('Testing CORS configuration', 'info');
+            corsResultDiv.classList.remove('hidden');
+            corsDetailsPre.classList.remove('hidden');
+            corsDetailsPre.textContent = 'Testing CORS...';
+            
+            const testDiv = document.createElement('div');
+            testDiv.className = 'status-badge badge-warning';
+            testDiv.innerHTML = '<span class="status-indicator status-warning"></span><span>Testing CORS...</span>';
+            corsResultDiv.innerHTML = '';
+            corsResultDiv.appendChild(testDiv);
+            
+            try {
+                const response = await fetch(`${apiUrl}/jobs`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Origin': window.location.origin
+                    }
+                });
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                    'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials')
+                };
+                
+                const corsEnabled = corsHeaders['Access-Control-Allow-Origin'] !== null;
+                
+                if (corsEnabled) {
+                    const successDiv = document.createElement('div');
+                    successDiv.className = 'status-badge badge-success';
+                    successDiv.innerHTML = '<span class="status-indicator status-success"></span><span>CORS is properly configured</span>';
+                    corsResultDiv.innerHTML = '';
+                    corsResultDiv.appendChild(successDiv);
+                    
+                    addLog('CORS is properly configured', 'success');
+                    corsDetailsPre.textContent = 'CORS Headers:\n\n' + 
+                        Object.entries(corsHeaders)
+                            .filter(([, value]) => value !== null)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join('\n');
+                } else {
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'status-badge badge-error';
+                    errorDiv.innerHTML = '<span class="status-indicator status-error"></span><span>CORS is not properly configured</span>';
+                    corsResultDiv.innerHTML = '';
+                    corsResultDiv.appendChild(errorDiv);
+                    
+                    addLog('CORS is not properly configured', 'error');
+                    corsDetailsPre.textContent = 'The API response does not include the necessary CORS headers.\n\n' +
+                        'The server needs to include these headers:\n' +
+                        '- Access-Control-Allow-Origin: (your domain or *)\n' +
+                        '- Access-Control-Allow-Methods: (needed HTTP methods)\n' +
+                        '- Access-Control-Allow-Headers: (needed headers)\n\n' +
+                        'Current headers received:\n' +
+                        Object.entries(corsHeaders)
+                            .filter(([, value]) => value !== null)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join('\n');
+                }
+            } catch (error) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'status-badge badge-error';
+                errorDiv.innerHTML = '<span class="status-indicator status-error"></span><span>CORS test failed</span>';
+                corsResultDiv.innerHTML = '';
+                corsResultDiv.appendChild(errorDiv);
+                
+                addLog(`CORS test failed: ${error.message}`, 'error');
+                corsDetailsPre.textContent = `Error: ${error.message}\n\n`;
+                
+                if (error.message.includes('Failed to fetch')) {
+                    corsDetailsPre.textContent += 'This could be a CORS error or the API might be unreachable.\n\n' +
+                        'Possible solutions:\n' +
+                        '1. Make sure the API server is running\n' +
+                        '2. Check that the API URL is correct\n' +
+                        '3. Ensure the API server includes proper CORS headers\n' +
+                        '4. The API server should include:\n' +
+                        '   - Access-Control-Allow-Origin: ' + window.location.origin + ' (or *)\n' +
+                        '   - Access-Control-Allow-Methods: GET, POST, etc.\n' +
+                        '   - Access-Control-Allow-Headers: Content-Type, Authorization, etc.';
+                }
+            }
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
