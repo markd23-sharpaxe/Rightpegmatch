@@ -1,0 +1,15 @@
+# Netlify configuration file
+
+# Build settings - this will ensure we don't run build commands
+[build]
+  publish = "."
+
+# Redirects and headers - ensure client-side routing works
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables for all branches and contexts
+[context.production.environment]
+  VITE_API_URL = "https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/api"
