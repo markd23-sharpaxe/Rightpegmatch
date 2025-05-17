@@ -56,21 +56,34 @@
       max-height: 200px;
       overflow-y: auto;
     }
+    button {
+      background-color: #2563eb;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    button:hover {
+      background-color: #1d4ed8;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>Right Peg Match</h1>
-    <p>Welcome to the Right Peg Match static site hosted on Netlify!</p>
+    <p>Welcome to the Right Peg Match site! This page is testing connectivity to the backend API.</p>
     
     <div class="status">
       <p><strong>API Connection:</strong></p>
       <p>This site connects to the backend API at:</p>
       <p class="api-url">https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/api</p>
       
-      <p>The API status will be shown here once the connection is established.</p>
       <div id="api-status">Checking API connection...</div>
       <div id="debug-info" class="debug-info"></div>
+      
+      <button id="test-connection">Test Connection Again</button>
     </div>
   </div>
 
@@ -83,47 +96,92 @@
       console.log(message);
     }
 
-    // Function to test API with a simple ping request
-    function testApiPing() {
-      const apiUrl = 'https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/api';
+    // Function to test API ping endpoint
+    async function testConnection() {
+      const apiBaseUrl = 'https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/api';
       const statusElement = document.getElementById('api-status');
+      const debugInfo = document.getElementById('debug-info');
       
-      log(`Testing API connection at: ${apiUrl}`);
+      // Clear previous logs
+      debugInfo.innerHTML = '';
+      
+      log('Starting new API connection test');
       statusElement.innerHTML = '<span style="color: blue;">⟳ Testing API connection...</span>';
-
-      // Create an image element to test connection (bypasses CORS)
-      const img = new Image();
-      img.onload = function() {
-        log('Image ping succeeded - API server is reachable');
-        statusElement.innerHTML = '<span style="color: green;">✓ API server is reachable</span>';
-      };
-      img.onerror = function() {
-        log('Image ping failed - trying alternative approach');
-        
-        // Try a no-cors fetch as an alternative
-        fetch(`${apiUrl}/api/user`, { 
-          method: 'GET',
-          mode: 'no-cors'
-        })
-        .then(response => {
-          log('No-CORS request completed (status may be opaque)');
-          statusElement.innerHTML = '<span style="color: orange;">⚠ API is reachable but CORS may be blocking full access</span>';
-        })
-        .catch(error => {
-          log(`All connection attempts failed: ${error.message}`);
-          statusElement.innerHTML = '<span style="color: red;">✗ Unable to connect to API</span>';
-        });
-      };
       
-      // Use a random parameter to prevent caching
-      img.src = `${apiUrl}/ping-test?t=${Date.now()}`;
-      log(`Sent image ping to: ${img.src}`);
+      // Test the ping-test endpoint
+      try {
+        log(`Testing ping endpoint: ${apiBaseUrl}/ping-test`);
+        const pingResponse = await fetch(`${apiBaseUrl}/ping-test?t=${Date.now()}`, {
+          method: 'GET',
+          mode: 'cors',
+          cache: 'no-cache'
+        });
+        
+        if (pingResponse.ok) {
+          const text = await pingResponse.text();
+          log(`Ping test successful: ${text}`);
+          statusElement.innerHTML = '<span style="color: green;">✓ API is connected and working properly</span>';
+          
+          // Try a regular API endpoint now
+          try {
+            log('Testing API user endpoint for full data access');
+            const userResponse = await fetch(`${apiBaseUrl}/api/user`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              credentials: 'include'
+            });
+            
+            log(`User endpoint status: ${userResponse.status}`);
+            
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              log('Full API access confirmed (user data retrieved)');
+            } else {
+              log('User endpoint returned non-OK status (likely requires authentication)');
+            }
+          } catch (userError) {
+            log(`User endpoint error: ${userError.message}`);
+          }
+          
+          return;
+        } else {
+          log(`Ping test returned status: ${pingResponse.status}`);
+          throw new Error(`Ping test failed with status ${pingResponse.status}`);
+        }
+      } catch (pingError) {
+        log(`Ping test error: ${pingError.message}`);
+        
+        // Try image ping as fallback
+        log('Trying image ping as fallback');
+        
+        // Create an image element to test connection
+        const img = new Image();
+        img.onload = function() {
+          log('Image ping successful - API server is reachable');
+          statusElement.innerHTML = '<span style="color: green;">✓ API server is reachable via image ping</span>';
+        };
+        img.onerror = function() {
+          log('Image ping failed - API connection issues persist');
+          statusElement.innerHTML = '<span style="color: red;">✗ Unable to connect to API</span>';
+        };
+        
+        // Use timestamp to prevent caching
+        img.src = `${apiBaseUrl}/ping-image?t=${Date.now()}`;
+        log(`Sent image ping to: ${img.src}`);
+      }
     }
 
     // Start API testing when page loads
     window.addEventListener('DOMContentLoaded', function() {
       log('Page loaded, starting API connection test');
-      testApiPing();
+      testConnection();
+      
+      // Setup button event handler
+      document.getElementById('test-connection').addEventListener('click', function() {
+        testConnection();
+      });
     });
   </script>
 </body>
