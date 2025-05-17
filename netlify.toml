@@ -1,0 +1,33 @@
+# Netlify configuration file
+
+# Build settings - no build needed for static site
+[build]
+  publish = "."
+
+# Redirects and headers
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables that apply to all branches and contexts
+[context.production.environment]
+  VITE_API_URL = "https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/api"
+
+# Specific staging environment configuration
+[context.staging.environment]
+  VITE_API_URL = "https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/api"
+
+# Specific branch deployment environment configuration
+[context.branch-deploy.environment]
+  VITE_API_URL = "https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/api"
+
+# Headers to enable security features
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    Content-Security-Policy = "default-src 'self' https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev https://cdn.jsdelivr.net https://randomuser.me; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline'; img-src 'self' https://images.unsplash.com https://randomuser.me data:; connect-src 'self' https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev;"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer-when-downgrade"
