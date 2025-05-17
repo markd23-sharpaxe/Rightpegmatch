@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Right Peg Match - API Connection Test</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+  <style>
+    .test-result {
+      border-radius: 4px;
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+    .test-success {
+      background-color: #d1fae5;
+      border-left: 4px solid #10b981;
+    }
+    .test-failure {
+      background-color: #fee2e2;
+      border-left: 4px solid #ef4444;
+    }
+    .test-pending {
+      background-color: #e0f2fe;
+      border-left: 4px solid #3b82f6;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 p-4">
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold mb-6 text-blue-600">Right Peg Match - API Connection Test</h1>
+    
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">Connection Settings</h2>
+      <div class="flex flex-col md:flex-row mb-4 gap-4">
+        <div class="flex-1">
+          <label for="api-url" class="block mb-2 font-medium">API URL:</label>
+          <input type="text" id="api-url" value="https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/api" 
+                 class="w-full p-2 border border-gray-300 rounded-md">
+        </div>
+      </div>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <button id="test-btn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+          Run Full Diagnostics
+        </button>
+        <button id="ping-btn" class="bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
+          Quick Ping Test
+        </button>
+      </div>
+    </div>
+    
+    <div id="results-container" class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">Test Results</h2>
+      <div id="results" class="border border-gray-200 rounded-md p-4">
+        <p class="text-gray-500 italic">Run a test to see results.</p>
+      </div>
+    </div>
+    
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">Connectivity Troubleshooting</h2>
+      <div class="space-y-4">
+        <div class="bg-blue-50 p-4 rounded-md">
+          <h3 class="font-medium mb-2">Common Issues:</h3>
+          <ul class="list-disc pl-5 space-y-2">
+            <li>Replit backend might be sleeping - the first request may take longer</li>
+            <li>CORS issues if accessing from a different domain</li>
+            <li>Network connectivity problems</li>
+            <li>Incorrect API URL configuration</li>
+          </ul>
+        </div>
+        
+        <div class="bg-green-50 p-4 rounded-md">
+          <h3 class="font-medium mb-2">Solutions:</h3>
+          <ul class="list-disc pl-5 space-y-2">
+            <li>Verify the Replit server is running</li>
+            <li>Check that CORS is properly configured on the backend</li>
+            <li>Ensure the API URL is correctly set in the Netlify environment variables</li>
+            <li>Try accessing the API directly in a new tab to verify it's responding</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    
+    <div>
+      <h2 class="text-xl font-semibold mb-4">Environment Information</h2>
+      <div id="env-info" class="bg-gray-100 p-4 rounded-md font-mono text-sm"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Display environment information
+      const envInfo = document.getElementById('env-info');
+      if (envInfo) {
+        const info = [];
+        info.push(`User Agent: ${navigator.userAgent}`);
+        info.push(`Protocol: ${window.location.protocol}`);
+        info.push(`Host: ${window.location.host}`);
+        
+        // Check for environment variables (safely)
+        try {
+          if (window.import && window.import.meta && window.import.meta.env) {
+            info.push(`Environment: ${window.import.meta.env.MODE || 'Unknown'}`);
+            if (window.import.meta.env.VITE_API_URL) {
+              info.push(`API URL (env): ${window.import.meta.env.VITE_API_URL}`);
+            } else {
+              info.push(`API URL (env): Not set`);
+            }
+          } else {
+            info.push(`Environment variables: Not accessible`);
+          }
+        } catch (e) {
+          info.push(`Environment variables: Error accessing (${e.message})`);
+        }
+        
+        envInfo.textContent = info.join('\n');
+      }
+      
+      // Get elements
+      const apiUrlInput = document.getElementById('api-url');
+      const testBtn = document.getElementById('test-btn');
+      const pingBtn = document.getElementById('ping-btn');
+      const resultsContainer = document.getElementById('results');
+      
+      // Run ping test
+      pingBtn.addEventListener('click', async function() {
+        const apiUrl = apiUrlInput.value.trim();
+        if (!apiUrl) {
+          alert('Please enter an API URL');
+          return;
+        }
+        
+        // Clear previous results
+        resultsContainer.innerHTML = '<div class="test-pending">Testing connection to API...</div>';
+        
+        try {
+          // Add a timestamp to prevent caching
+          const pingUrl = `${apiUrl}/ping?t=${Date.now()}`;
+          const startTime = Date.now();
+          
+          const response = await fetch(pingUrl, {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+          });
+          
+          const endTime = Date.now();
+          const responseTime = endTime - startTime;
+          
+          if (response.ok) {
+            let responseText;
+            try {
+              responseText = await response.text();
+            } catch (e) {
+              responseText = '(empty response)';
+            }
+            
+            resultsContainer.innerHTML = `
+              <div class="test-success">
+                <h3 class="font-bold">✅ Connection Successful</h3>
+                <p>Response time: ${responseTime}ms</p>
+                <p>Status: ${response.status} ${response.statusText}</p>
+                <p>Response: ${responseText}</p>
+              </div>
+            `;
+          } else {
+            resultsContainer.innerHTML = `
+              <div class="test-failure">
+                <h3 class="font-bold">❌ Connection Failed</h3>
+                <p>Response time: ${responseTime}ms</p>
+                <p>Status: ${response.status} ${response.statusText}</p>
+                <p>The API server responded with an error.</p>
+              </div>
+            `;
+          }
+        } catch (error) {
+          resultsContainer.innerHTML = `
+            <div class="test-failure">
+              <h3 class="font-bold">❌ Connection Failed</h3>
+              <p>Error: ${error.message}</p>
+              <p>This could indicate a network error, CORS issue, or the API server is down.</p>
+            </div>
+          `;
+        }
+      });
+      
+      // Run full diagnostic test
+      testBtn.addEventListener('click', async function() {
+        const apiUrl = apiUrlInput.value.trim();
+        if (!apiUrl) {
+          alert('Please enter an API URL');
+          return;
+        }
+        
+        // Clear previous results
+        resultsContainer.innerHTML = '<div class="test-pending">Running full diagnostics...</div>';
+        
+        const results = [];
+        let allPassed = true;
+        
+        // Test 1: Basic connectivity (ping)
+        results.push('<div class="test-pending">Testing basic connectivity...</div>');
+        updateResults();
+        
+        try {
+          const pingUrl = `${apiUrl}/ping?t=${Date.now()}`;
+          const pingStart = Date.now();
+          const pingResponse = await fetch(pingUrl, {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+          });
+          const pingTime = Date.now() - pingStart;
+          
+          if (pingResponse.ok) {
+            results[0] = `
+              <div class="test-success">
+                <h3 class="font-bold">✅ Basic Connectivity</h3>
+                <p>Successfully connected to ${pingUrl}</p>
+                <p>Response time: ${pingTime}ms</p>
+              </div>
+            `;
+          } else {
+            allPassed = false;
+            results[0] = `
+              <div class="test-failure">
+                <h3 class="font-bold">❌ Basic Connectivity</h3>
+                <p>Failed to connect to ${pingUrl}</p>
+                <p>Status: ${pingResponse.status} ${pingResponse.statusText}</p>
+              </div>
+            `;
+          }
+        } catch (error) {
+          allPassed = false;
+          results[0] = `
+            <div class="test-failure">
+              <h3 class="font-bold">❌ Basic Connectivity</h3>
+              <p>Error: ${error.message}</p>
+              <p>Could not connect to ${apiUrl}/ping</p>
+            </div>
+          `;
+        }
+        updateResults();
+        
+        // Test 2: CORS configuration
+        results.push('<div class="test-pending">Testing CORS configuration...</div>');
+        updateResults();
+        
+        try {
+          const corsUrl = `${apiUrl}/jobs?limit=1&t=${Date.now()}`;
+          const corsResponse = await fetch(corsUrl, {
+            method: 'GET',
+            mode: 'cors',
+            credentials: 'include',
+            headers: {
+              'Origin': window.location.origin
+            }
+          });
+          
+          if (corsResponse.ok) {
+            results[1] = `
+              <div class="test-success">
+                <h3 class="font-bold">✅ CORS Configuration</h3>
+                <p>CORS is properly configured for this origin.</p>
+                <p>Successfully made a request to ${corsUrl}</p>
+              </div>
+            `;
+          } else {
+            // Even if status isn't 200, as long as we got a response without CORS error, the CORS config is ok
+            results[1] = `
+              <div class="test-success">
+                <h3 class="font-bold">✅ CORS Configuration</h3>
+                <p>CORS is properly configured for this origin.</p>
+                <p>Got response status ${corsResponse.status} from ${corsUrl}</p>
+              </div>
+            `;
+          }
+        } catch (error) {
+          allPassed = false;
+          results[1] = `
+            <div class="test-failure">
+              <h3 class="font-bold">❌ CORS Configuration</h3>
+              <p>Error: ${error.message}</p>
+              <p>This may indicate that CORS is not properly configured on the API server.</p>
+            </div>
+          `;
+        }
+        updateResults();
+        
+        // Test 3: Data retrieval
+        results.push('<div class="test-pending">Testing data retrieval...</div>');
+        updateResults();
+        
+        try {
+          const dataUrl = `${apiUrl}/jobs?limit=1&t=${Date.now()}`;
+          const dataResponse = await fetch(dataUrl, {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+          });
+          
+          if (dataResponse.ok) {
+            try {
+              const data = await dataResponse.json();
+              const isValidData = Array.isArray(data) || (typeof data === 'object' && data !== null);
+              
+              if (isValidData) {
+                results[2] = `
+                  <div class="test-success">
+                    <h3 class="font-bold">✅ Data Retrieval</h3>
+                    <p>Successfully retrieved and parsed data.</p>
+                    <p>Data type: ${Array.isArray(data) ? 'Array' : 'Object'}</p>
+                  </div>
+                `;
+              } else {
+                allPassed = false;
+                results[2] = `
+                  <div class="test-failure">
+                    <h3 class="font-bold">❌ Data Retrieval</h3>
+                    <p>Received response but data format is unexpected.</p>
+                    <p>Data: ${JSON.stringify(data).substring(0, 100)}...</p>
+                  </div>
+                `;
+              }
+            } catch (parseError) {
+              allPassed = false;
+              results[2] = `
+                <div class="test-failure">
+                  <h3 class="font-bold">❌ Data Retrieval</h3>
+                  <p>Received response but failed to parse JSON.</p>
+                  <p>Error: ${parseError.message}</p>
+                </div>
+              `;
+            }
+          } else {
+            allPassed = false;
+            results[2] = `
+              <div class="test-failure">
+                <h3 class="font-bold">❌ Data Retrieval</h3>
+                <p>API returned error status: ${dataResponse.status} ${dataResponse.statusText}</p>
+              </div>
+            `;
+          }
+        } catch (error) {
+          allPassed = false;
+          results[2] = `
+            <div class="test-failure">
+              <h3 class="font-bold">❌ Data Retrieval</h3>
+              <p>Error: ${error.message}</p>
+              <p>Could not retrieve data from ${apiUrl}/jobs</p>
+            </div>
+          `;
+        }
+        updateResults();
+        
+        // Add summary
+        if (allPassed) {
+          results.push(`
+            <div class="test-success mt-4 font-bold">
+              ✅ All tests passed! The API connection is working correctly.
+            </div>
+          `);
+        } else {
+          results.push(`
+            <div class="test-failure mt-4 font-bold">
+              ❌ Some tests failed. Please check the results above and troubleshoot the issues.
+            </div>
+          `);
+        }
+        updateResults();
+        
+        // Helper function to update results
+        function updateResults() {
+          resultsContainer.innerHTML = results.join('');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
