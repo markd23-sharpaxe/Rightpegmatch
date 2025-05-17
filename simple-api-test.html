@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple API Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #4F46E5;
+        }
+        button {
+            background-color: #4F46E5;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background-color: #4338CA;
+        }
+        pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 5px 0 15px;
+            font-family: monospace;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        .status-green {
+            background-color: green;
+        }
+        .status-red {
+            background-color: red;
+        }
+        .status-yellow {
+            background-color: orange;
+        }
+        .panel {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple API Test</h1>
+    <p>This simple tool tests the connection to your Replit backend API.</p>
+    
+    <div class="panel">
+        <h2>API URL Configuration</h2>
+        <input type="text" id="api-url" placeholder="Enter API URL (e.g., https://remote-match-maker-markdurno-markdurno.replit.app/api)" value="https://remote-match-maker-markdurno-markdurno.replit.app/api">
+        <button id="test-connection">Test Connection</button>
+        <div id="connection-status"></div>
+    </div>
+    
+    <div class="panel">
+        <h2>API Response</h2>
+        <pre id="api-response">No test run yet.</pre>
+    </div>
+    
+    <script>
+        const apiUrlInput = document.getElementById('api-url');
+        const testButton = document.getElementById('test-connection');
+        const statusDiv = document.getElementById('connection-status');
+        const responseDiv = document.getElementById('api-response');
+        
+        function updateStatus(status, message) {
+            let statusHtml = '';
+            
+            if (status === 'success') {
+                statusHtml = `<p><span class="status-indicator status-green"></span> <strong>Connected successfully!</strong></p>`;
+            } else if (status === 'error') {
+                statusHtml = `<p><span class="status-indicator status-red"></span> <strong>Connection failed!</strong></p>`;
+            } else if (status === 'loading') {
+                statusHtml = `<p><span class="status-indicator status-yellow"></span> <strong>Testing connection...</strong></p>`;
+            }
+            
+            if (message) {
+                statusHtml += `<p>${message}</p>`;
+            }
+            
+            statusDiv.innerHTML = statusHtml;
+        }
+        
+        testButton.addEventListener('click', async () => {
+            const apiUrl = apiUrlInput.value.trim();
+            if (!apiUrl) {
+                updateStatus('error', 'Please enter an API URL');
+                return;
+            }
+            
+            updateStatus('loading', 'Sending request...');
+            responseDiv.textContent = 'Waiting for response...';
+            
+            try {
+                console.log(`Testing connection to: ${apiUrl}/jobs`);
+                
+                // Making the request without CORS mode for simpler test
+                const startTime = Date.now();
+                
+                // Use /jobs endpoint as a test
+                const response = await fetch(`${apiUrl}/jobs`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                const endTime = Date.now();
+                const duration = endTime - startTime;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const dataString = JSON.stringify(data.slice(0, 2), null, 2);
+                    
+                    updateStatus('success', `Connected in ${duration}ms. Received ${data.length} jobs.`);
+                    responseDiv.textContent = dataString + "\n\n(Response truncated for readability)";
+                } else {
+                    const text = await response.text();
+                    updateStatus('error', `Server returned: ${response.status} ${response.statusText}`);
+                    responseDiv.textContent = `Error Response: ${text}`;
+                }
+            } catch (error) {
+                console.error('API test error:', error);
+                updateStatus('error', `${error.message}`);
+                responseDiv.textContent = `Error details: ${error.stack || error.message}`;
+                
+                // Add troubleshooting guidance
+                if (error.message.includes('Failed to fetch')) {
+                    responseDiv.textContent += "\n\nTroubleshooting suggestions:\n" +
+                        "1. Check if the Replit backend is running\n" +
+                        "2. Verify the API URL is correct\n" +
+                        "3. Ensure CORS is properly configured on the backend\n" +
+                        "4. Check for network issues or blocking firewalls";
+                }
+            }
+        });
+        
+        // Set default API URL from query string if available
+        const params = new URLSearchParams(window.location.search);
+        const apiUrlParam = params.get('url');
+        if (apiUrlParam) {
+            apiUrlInput.value = apiUrlParam;
+        }
+    </script>
+</body>
+</html>
