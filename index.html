@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RightPegMatch.com - Redirecting...</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f9fafb;
+        margin: 0;
+        padding: 20px;
+        color: #333;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        text-align: center;
+      }
+      
+      .container {
+        max-width: 600px;
+        padding: 40px;
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+      }
+      
+      .logo {
+        max-width: 200px;
+        margin-bottom: 30px;
+      }
+      
+      h1 {
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #111827;
+      }
+      
+      p {
+        font-size: 16px;
+        line-height: 1.6;
+        margin-bottom: 30px;
+        color: #4b5563;
+      }
+      
+      .button {
+        display: inline-block;
+        background-color: #5BBFBA;
+        color: white;
+        font-weight: 500;
+        padding: 14px 32px;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background-color 0.2s;
+      }
+      
+      .button:hover {
+        background-color: #4a9e9a;
+      }
+      
+      .loading {
+        display: block;
+        width: 50px;
+        height: 50px;
+        margin: 30px auto;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #5BBFBA;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <img src="https://i.imgur.com/PWB5HeN.png" alt="RightPegMatch Logo" class="logo">
+      <h1>Redirecting to RightPegMatch Application</h1>
+      <p>You're being redirected to the RightPegMatch application. If you're not redirected automatically, please click the button below.</p>
+      <div class="loading"></div>
+      <a href="https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/" class="button" id="redirect-button">Go to Application</a>
+    </div>
+
+    <script>
+      // Function to redirect to the application
+      function redirectToApp() {
+        window.location.href = "https://7a407b74-b1a3-43f7-bf8a-d00fad3554e3-00-15b02g7uh8r3y.riker.replit.dev/";
+      }
+      
+      // Redirect automatically after a short delay
+      setTimeout(redirectToApp, 1500);
+      
+      // Also handle click on the button
+      document.getElementById('redirect-button').addEventListener('click', function(e) {
+        e.preventDefault();
+        redirectToApp();
+      });
+    </script>
+  </body>
+</html>
