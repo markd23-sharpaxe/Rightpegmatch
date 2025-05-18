@@ -1,42 +1,48 @@
-# Right Peg Match - Fixed Schema for Netlify Deployment
+# Right Peg Match - Frontend for Netlify
 
-This package contains a solution for the schema import issue that's preventing your Netlify deployment from building successfully.
+This is the frontend application for the Right Peg Match platform, designed to be deployed on Netlify and connect to a Replit backend.
 
-## The Problem
+## Features
 
-Netlify is reporting this error during build:
+- Reliable API connectivity using multiple connection strategies
+- Complete job listing interface
+- User authentication (login/register)
+- Job details and application process
+- Mobile-responsive design
+
+## How it Works
+
+This frontend application uses a multi-strategy approach to ensure reliable connectivity with the Replit backend:
+
+1. **JSONP Connection** - Uses script tag insertion to bypass CORS restrictions
+2. **Image Connection** - Uses image loading which has fewer CORS restrictions
+3. **Standard Fetch** - Uses standard fetch requests when CORS is working properly
+4. **Proxy Connection** - Falls back to a CORS proxy as a last resort
+
+## Deployment Instructions
+
+1. Upload this project to GitHub
+2. Connect Netlify to your GitHub repository
+3. Configure the following environment variables in Netlify:
+   - `VITE_API_URL`: Your Replit backend URL (e.g., `https://your-replit-app.replit.dev/api`)
+
+## Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+
+# Build for production
+npm run build
 ```
-Could not resolve "../../../shared/schema" from "src/pages/edit-profile-page.tsx"
-```
 
-This happens because the build process can't find the schema file that's located outside the client directory.
+## Tech Stack
 
-## The Solution
-
-This package includes:
-
-1. **Modified Vite Configuration** - Updates path aliases to resolve imports correctly
-2. **Local Schema Copy** - Places a compatible version of the schema in the client directory
-3. **Proper Netlify Configuration** - Ensures the build process works correctly
-
-## How to Deploy
-
-1. Copy these files into your project:
-   - `client/src/shared/schema.ts` - The local schema copy
-   - `client/vite.config.ts` - The updated Vite configuration
-   - `netlify.toml` - The correct Netlify settings
-
-2. Deploy to Netlify using one of these methods:
-   - Connect your GitHub repository to Netlify
-   - Build locally with `npm run build` and upload the `dist` directory
-
-## Why This Works
-
-The solution works by:
-1. Creating a local copy of the schema that contains all the types needed by the frontend
-2. Setting up proper path aliases in Vite so imports resolve correctly
-3. Configuring Netlify to use the right build settings
-
-## Important Note
-
-This fix maintains your exact app design and functionality while resolving the build issue. The schema file is a simplified version that contains just the types needed by the frontend.
+- React
+- React Router
+- React Query
+- Tailwind CSS
+- Vite
